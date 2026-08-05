@@ -7,6 +7,7 @@ va dieu kien rule theo README muc 4.
 Chay: python scripts/verify_outputs.py
 """
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -23,6 +24,33 @@ VALID_ISSUES = {
     "valid_split_payment": ("MULTIPLE_PAYMENTS_RECONCILED", "explain_valid_split_payment", "no_action", None),
     "unsupported_late_claim": ("DELIVERY_WITHIN_ESTIMATE", "reject_late_refund", "no_action", None),
 }
+
+EXPECTED_NAMES = [f"EC_{index:03d}.json" for index in range(1, 51)]
+TOP_LEVEL_KEYS = {
+    "case_id", "assessment", "affected_entities", "root_cause_analysis",
+    "evidence_ids", "financial_resolution", "resolution_actions",
+}
+NESTED_KEYS = {
+    "assessment": {"primary_issue", "case_status", "confidence"},
+    "affected_entities": {"order_ids", "item_ids", "seller_ids", "payment_ids"},
+    "root_cause_analysis": {"ranked_causes", "responsible_parties"},
+    "financial_resolution": {
+        "currency", "item_total_brl", "freight_total_brl",
+        "payment_total_brl", "recommended_refund_brl",
+    },
+}
+
+
+def _reject_non_json_constant(value):
+    raise ValueError(f"non-standard JSON constant: {value}")
+
+
+def _is_finite_number(value):
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+    )
 
 
 def main():
@@ -41,14 +69,86 @@ def main():
 
     errors = []
     warns = []
-    out_files = sorted((ROOT / "output").glob("EC_*.json"))
-    if len(out_files) != 50:
-        errors.append(f"output/ co {len(out_files)} file, can dung 50")
+    output_entries = sorted((ROOT / "output").iterdir(), key=lambda path: path.name)
+    actual_names = [path.name for path in output_entries]
+    if actual_names != EXPECTED_NAMES or any(not path.is_file() for path in output_entries):
+        missing = sorted(set(EXPECTED_NAMES) - set(actual_names))
+        extra = sorted(set(actual_names) - set(EXPECTED_NAMES))
+        errors.append(
+            f"output/ phai chi co EC_001.json..EC_050.json; "
+            f"thieu={missing}, du={extra}"
+        )
+    out_files = [ROOT / "output" / name for name in EXPECTED_NAMES if (ROOT / "output" / name).is_file()]
 
     for path in out_files:
         cid = path.stem
-        o = json.loads(path.read_text(encoding="utf-8"))
         e = lambda msg: errors.append(f"{cid}: {msg}")
+
+        try:
+            o = json.loads(
+                path.read_text(encoding="utf-8"),
+                parse_constant=_reject_non_json_constant,
+            )
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            e(f"JSON khong hop le: {exc}")
+            continue
+        if not isinstance(o, dict) or set(o) != TOP_LEVEL_KEYS:
+            e("top-level schema keys khong chinh xac")
+            continue
+        bad_nested = False
+        for key, required_keys in NESTED_KEYS.items():
+            if not isinstance(o.get(key), dict) or set(o[key]) != required_keys:
+                e(f"schema cua {key} khong chinh xac")
+                bad_nested = True
+        list_fields = [o.get("evidence_ids"), o.get("resolution_actions")]
+        ae_candidate = o.get("affected_entities", {})
+        rca_candidate = o.get("root_cause_analysis", {})
+        list_fields += [ae_candidate.get(key) for key in ("order_ids", "item_ids", "seller_ids", "payment_ids")]
+        list_fields += [rca_candidate.get("ranked_causes"), rca_candidate.get("responsible_parties")]
+        if any(not isinstance(value, list) for value in list_fields):
+            e("schema yeu cau cac entity/evidence/cause/party/action la list")
+            bad_nested = True
+        string_lists = [o.get("evidence_ids"), o.get("resolution_actions")]
+        string_lists += [
+            ae_candidate.get(key)
+            for key in ("order_ids", "item_ids", "seller_ids", "payment_ids")
+        ]
+        if any(
+            isinstance(values, list)
+            and any(not isinstance(value, str) for value in values)
+            for values in string_lists
+        ):
+            e("entity/evidence/action chi duoc chua chuoi")
+            bad_nested = True
+        causes_candidate = rca_candidate.get("ranked_causes")
+        if (
+            isinstance(causes_candidate, list)
+            and (
+                not causes_candidate
+                or any(
+                    not isinstance(value, dict)
+                    or set(value) != {"cause_code", "rank"}
+                    or not isinstance(value.get("cause_code"), str)
+                    or not isinstance(value.get("rank"), int)
+                    or isinstance(value.get("rank"), bool)
+                    for value in causes_candidate
+                )
+            )
+        ):
+            e("ranked_causes co phan tu khong hop le")
+            bad_nested = True
+        parties_candidate = rca_candidate.get("responsible_parties")
+        if isinstance(parties_candidate, list) and any(
+            not isinstance(value, dict)
+            or set(value) != {"party_type", "party_id"}
+            or not isinstance(value.get("party_type"), str)
+            or not isinstance(value.get("party_id"), str)
+            for value in parties_candidate
+        ):
+            e("responsible_parties co phan tu khong hop le")
+            bad_nested = True
+        if bad_nested:
+            continue
 
         if o.get("case_id") != cid:
             e("case_id khong khop ten file")
@@ -63,7 +163,7 @@ def main():
             e(f"primary_issue la {issue}")
             continue
         cause, action, want_status, want_party = VALID_ISSUES[issue]
-        if not (0 <= conf <= 1):
+        if not _is_finite_number(conf) or not (0 <= conf <= 1):
             e(f"confidence {conf} ngoai [0,1]")
         if status != want_status:
             e(f"case_status {status}, mong doi {want_status}")
@@ -107,6 +207,13 @@ def main():
         fin = o["financial_resolution"]
         if fin["currency"] != "BRL":
             e("currency khac BRL")
+        for key in (
+            "item_total_brl", "freight_total_brl", "payment_total_brl",
+            "recommended_refund_brl",
+        ):
+            if not _is_finite_number(fin[key]):
+                e(f"{key} khong phai so huu han")
+                fin[key] = float("inf")
         if abs(fin["item_total_brl"] - item_total) > 0.005:
             e(f"item_total {fin['item_total_brl']} != {item_total}")
         if abs(fin["freight_total_brl"] - freight_total) > 0.005:

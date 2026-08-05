@@ -7,7 +7,7 @@
 | Họ và tên       | Phạm Nguyễn Hưng Nguyên                       |
 | MSSV            | 2A202601279                                   |
 | Khóa/Lớp        | K3                                            |
-| Vai trò chính   | Xây dựng pipeline multi-agent end-to-end      |
+| Vai trò chính   | Pipeline & Agents lead (nhóm 2 người, cùng 2A202601813 Nguyễn Văn Tuấn Anh — Verification & Delivery) |
 | Ngày hoàn thành | 2026-08-05                                    |
 
 ## 2. Vai trò và phạm vi công việc
@@ -18,23 +18,25 @@
 | --- | --- | --- | --- | --- |
 | Data tool + fact sheet | `src/data_access.py` (`get_order_facts`) | 3 CSV Olist, `claimed_order_id` | Fact sheet chuẩn hóa (totals, so sánh mốc thời gian) | Hoàn thành |
 | Policy engine EC_POLICY_V1 | `src/policy_engine.py` (`decide`, `build_output`) | Fact sheet | Decision + output JSON đúng schema | Hoàn thành |
-| 4 LLM agent + Verifier | `src/agents.py`, `src/llm_client.py` | Fact sheet, findings | Findings/proposal JSON, decision đã kiểm chứng | Hoàn thành |
-| Coordinator + trace + metadata | `src/run_all.py`, `src/tracer.py` | 50 file `input/EC_*.json` | 50 file `output/EC_*.json`, `logging/trace.jsonl`, `logging/metadata.json` | Hoàn thành |
-| Script kiểm tra trước khi nộp | `scripts/verify_outputs.py` | `output/`, CSV | Báo cáo lỗi/warning độc lập | Hoàn thành |
+| 4 LLM agent + Verifier runtime | `src/agents.py`, `src/llm_client.py` | Fact sheet, findings | Findings/proposal JSON, verifier tính lại policy và gọi tầng kiểm full output | Hoàn thành |
+| Coordinator + trace + metadata | `src/run_all.py`, `src/tracer.py`, `src/config.py` | 50 file `input/EC_*.json` | 50 output qua staging, trace atomic, metadata K3 | Hoàn thành |
 
 ### Việc hỗ trợ ngoài phạm vi chính
 
 | Hoạt động | Thành viên/module được hỗ trợ | Kết quả |
 | --- | --- | --- |
 | Viết tài liệu kiến trúc | `architecture.md` | Sơ đồ mermaid + bảng phân quyền dữ liệu từng agent |
+| Chốt schema handoff cùng Tuấn Anh | `src/handoffs.py` (Tuấn Anh phụ trách) | Thống nhất các field bắt buộc của contract để coordinator tích hợp validate trước khi giao việc |
+| Chạy thử validator và đóng gói của Tuấn Anh trên pipeline thật | `scripts/verify_outputs.py`, `scripts/verify_trace.py`, `scripts/package_submission.py` | Xác nhận 0 errors trên batch 50 case trước khi nộp |
 
 ## 3. Kết quả theo vai trò
 
 | Nhiệm vụ đã thực hiện | File/hàm/artifact liên quan | Kết quả bàn giao | Cách xác minh |
 | --- | --- | --- | --- |
 | Chạy 50 case end-to-end với 4 LLM agent + verifier | `src/run_all.py` | 50 JSON trong `output/`, phân bố 6 loại issue (8–9 case/loại) | `python -m src.run_all` |
-| Kiểm tra độc lập output | `scripts/verify_outputs.py` | 0 errors trên 50 file (schema, evidence, số tiền, rule) | `python scripts/verify_outputs.py` |
-| Trace chạy thật | `logging/trace.jsonl` | Đầy đủ event handoff/llm_call/verification cho 50 case | Đọc file, đếm `output_written` = 50 |
+| Chạy kiểm tra độc lập output (script do Tuấn Anh viết) | `scripts/verify_outputs.py` | 0 errors trên 50 file (schema, evidence, số tiền, rule) | `python scripts/verify_outputs.py` |
+| Trace chạy thật | `logging/trace.jsonl` | 50 case × 5 structured handoff, full-output verification và output_written | `python scripts/verify_trace.py` |
+| Chạy đóng gói hai biểu mẫu (script do Tuấn Anh viết) | `scripts/package_submission.py` | `output.zip` theo README và `submission.zip` theo Codelab | Validator chạy lại trước khi tạo ZIP |
 
 Output cụ thể phần việc của tôi tạo ra: bộ 50 file `output/EC_001.json` → `EC_050.json` cùng `trace.jsonl` chứng minh luồng handoff thật giữa các agent, và script verify xác nhận 0 sai lệch giữa output và dữ liệu CSV.
 
@@ -46,7 +48,8 @@ Từ một khiếu nại tự do của khách (`claimed_order_id` + message), h�
 
 ### Cách triển khai
 
-- **Tách "phân tích" khỏi "quyết định"**: 3 specialist agent (Order&Seller, Payment, Delivery) mỗi agent chỉ nhận đúng domain facts của mình (least privilege), gọi `llama3.2:3b` trả finding JSON; Policy Agent (LLM) nhận handoff 3 findings và đề xuất rule; Verifier (code) tính lại toàn bộ từ CSV bằng policy engine deterministic và có quyền phủ quyết. Nhờ vậy model 3B không thể làm sai số liệu cuối.
+- **Tách "phân tích" khỏi "quyết định"**: 3 specialist agent (Order&Seller, Payment, Delivery) mỗi agent chỉ nhận đúng domain facts của mình (least privilege), gọi `llama3.2:3b` trả finding JSON; Policy Agent (LLM) nhận handoff 3 findings và đề xuất rule; Verifier (code) tính lại từ CSV, dựng full output rồi kiểm schema/entity/evidence/amount/action trước khi cho phép publish.
+- **Handoff có contract thật**: mỗi case có 5 handoff (3 specialist, Policy, Verifier), bắt buộc gồm ticket ID, câu hỏi gốc, nhiệm vụ, facts kèm source IDs, fact thiếu/mâu thuẫn và next action. Schema contract và validator (`src/handoffs.py`, `verify_trace.py`) do Tuấn Anh phụ trách; tôi tích hợp việc validate vào coordinator trước khi mỗi agent nhận việc.
 - **Quy tắc dữ liệu**: seller bị coi là bàn giao muộn nếu `order_delivered_carrier_date > shipping_limit_date` của item thuộc seller đó; đối soát payment với sai số 0.10 BRL; mọi số tiền làm tròn 2 chữ số; 6 rule áp theo đúng thứ tự ưu tiên trong README.
 - **Ép LLM trả JSON**: gọi Ollama với `format=json`, `temperature=0`, `num_predict` giới hạn để chạy đủ nhanh trên CPU.
 
@@ -56,20 +59,23 @@ Từ một khiếu nại tự do của khách (`claimed_order_id` + message), h�
 | --- | --- |
 | Input | `input/EC_*.json` (case_id, claimed_order_id, policy_version) |
 | Output | `output/EC_*.json` đúng schema README mục 6 + giới hạn 5 ID/entity, 10 evidence, 3 causes, 3 parties, 5 actions |
-| Module phụ thuộc | `data_access.py` (fact sheet), `llm_client.py` (Ollama) |
-| Module sử dụng output | `verify_outputs.py`, hệ thống chấm điểm |
-| Điều kiện lỗi cần xử lý | LLM trả JSON hỏng (retry 2 lần rồi để verifier quyết), order không có item row (`item_total = freight_total = 0.0`, entity rỗng), timestamp thiếu (`NaT` → so sánh trả `None`, không đoán) |
+| Handoff | `ticket_id`, `question`, `assigned_task`, `sourced_facts[{name,value,source_ids}]`, `missing_or_conflicting_facts`, `next_action` |
+| Module phụ thuộc | `data_access.py` (fact sheet), `handoffs.py` (contract), `llm_client.py` (Ollama) |
+| Module sử dụng output | Verifier runtime, `verify_outputs.py`, `verify_trace.py`, hệ thống chấm điểm |
+| Điều kiện lỗi cần xử lý | LLM trả JSON hỏng/sai shape (thử tối đa 2 lần, vẫn lỗi thì fail batch), policy version/order không hợp lệ (fail-closed), timestamp thiếu (`NaT` → `None`, không suy thành đúng hạn) |
 
 ### Cách xác minh
 
 ```bash
 python -m src.run_all
-python scripts/verify_outputs.py
+python -B scripts/verify_outputs.py
+python -B scripts/verify_trace.py
+python -B scripts/package_submission.py
 ```
 
-- **Kết quả mong đợi:** 50 file output, script verify báo 0 errors.
-- **Kết quả thực tế:** 50/50 file được ghi, phân bố issue cân bằng (8–9 case mỗi loại — khớp với cách đề sinh case), verify 0 errors.
-- **Artifact/log:** `output/`, `logging/trace.jsonl`, `logging/metadata.json` (không chứa secret).
+- **Kết quả mong đợi:** 50 output; 250 handoff; 50 verification/output_written; cả hai validator báo 0 errors.
+- **Kết quả thực tế:** 50/50 output, 200 LLM call thành công, 250 handoff, 50 verification và 50 output_written; cả output validator và trace validator đều báo 0 errors (output validator thêm 0 warnings).
+- **Artifact/log:** `output/`, `logging/trace.jsonl`, `logging/metadata.json`, `output.zip`, `submission.zip`; ZIP chỉ lấy allowlist nên không chứa secret/cache/venv.
 
 ## 5. Một quyết định kỹ thuật quan trọng
 
@@ -77,7 +83,7 @@ python scripts/verify_outputs.py
 - **Các phương án đã cân nhắc:** (1) LLM làm hết từ phân tích đến JSON cuối; (2) code deterministic làm hết, không có agent thật; (3) hybrid — LLM agent phân tích/đề xuất theo domain riêng, verifier deterministic tính lại và quyết định cuối.
 - **Phương án đã chọn:** (3) hybrid.
 - **Lý do:** (1) không đảm bảo correctness với model 3B (JSON dài, nhiều ID hash 32 ký tự); (2) không đúng tinh thần bài lab multi-agent A2A; (3) giữ được handoff thật giữa các agent (có trace chứng minh) mà vẫn đảm bảo mọi con số khớp CSV — đúng yêu cầu "ưu tiên dữ liệu có thể kiểm chứng" của đề, chi phí chạy local bằng 0.
-- **Bằng chứng quyết định phù hợp:** `logging/trace.jsonl` có event `verification` từng case (`16/50` proposal được đồng ý ngay; `34/50` case lệch đều được Verifier sửa và log `corrections`); `scripts/verify_outputs.py` báo 0 errors trên 50 file.
+- **Bằng chứng quyết định phù hợp:** trace mới có 15/50 proposal đồng ý ngay và 35/50 proposal được Verifier sửa; mỗi case lưu corrections, bộ checks và full final output. `verify_outputs.py` và `verify_trace.py` đều đạt trước khi đóng gói.
 
 ## 6. Một lỗi hoặc blocker đã xử lý
 
@@ -92,11 +98,11 @@ python scripts/verify_outputs.py
 
 (Bộ câu hỏi trong template thuộc lab RAG/Crossref của ngày khác nên không áp dụng được cho Day 9; tôi trình bày luồng end-to-end của chính bài này.)
 
-1. **Dữ liệu đi từ input đến output như thế nào?** Coordinator đọc `EC_xxx.json`, lấy `claimed_order_id`, tool pandas join 3 bảng Olist thành fact sheet (totals + các so sánh mốc thời gian tính sẵn). Ba specialist agent nhận từng phần fact sheet qua handoff, trả findings; Policy Agent gộp findings và đề xuất rule; Verifier tính lại từ CSV, sửa sai lệch rồi mới dựng output JSON đúng schema.
+1. **Dữ liệu đi từ input đến output như thế nào?** Coordinator đọc `EC_xxx.json`, lấy `claimed_order_id`, tool pandas join 3 bảng Olist thành fact sheet. Ba specialist nhận handoff theo domain, trả findings; Coordinator handoff findings cho Policy rồi handoff proposal cho Verifier. Verifier tính lại từ CSV, dựng và kiểm full output; 50 output được staging trước khi publish.
 2. **Vì sao cần thứ tự ưu tiên rule?** Một order có thể thỏa nhiều điều kiện cùng lúc (ví dụ canceled nhưng cũng có split payment); thứ tự ưu tiên trong EC_POLICY_V1 đảm bảo mọi hệ thống chấm cùng một kết quả duy nhất.
-3. **Evidence được kiểm soát ra sao?** Evidence ID do code sinh từ row thật trong CSV (order/item/payment/seller/policy), LLM không tự sinh ID nên không thể tạo false positive về định dạng hay ID không tồn tại.
+3. **Evidence được kiểm soát ra sao?** ID order/item/payment/seller do code sinh từ row thật trong CSV; ID policy sinh deterministic từ root-cause EC_POLICY_V1. LLM không tự sinh evidence cuối, và Verifier kiểm lại từng ID trước khi ghi.
 4. **Vì sao verifier phải độc lập với policy agent?** Nếu verifier dùng lại kết luận của LLM thì sai lệch của model 3B đi thẳng vào output. Verifier chạy lại toàn bộ logic trên dữ liệu gốc, nên output cuối không phụ thuộc chất lượng model — trace cho thấy các case LLM chọn sai rule đều bị sửa.
-5. **Kết quả được xem là đạt dựa trên artifact nào?** `output/` đủ 50 file đúng schema; `scripts/verify_outputs.py` (đọc CSV độc lập) báo 0 errors; `trace.jsonl` chứng minh handoff thật; `metadata.json` khai báo model 3B ≤ 10B.
+5. **Kết quả được xem là đạt dựa trên artifact nào?** `output/` đủ 50 file; `verify_outputs.py` báo 0 errors; `verify_trace.py` xác nhận 50 case/250 handoff/full-output checks; metadata khai báo K3, EC_POLICY_V1 và model 3B; hai ZIP có member list đúng allowlist.
 
 ## 8. Cam kết của thành viên
 

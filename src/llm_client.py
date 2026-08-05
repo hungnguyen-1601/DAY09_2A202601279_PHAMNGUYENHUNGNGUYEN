@@ -7,7 +7,20 @@ import requests
 from . import config
 
 
-def chat_json(tracer, case_id, agent, system, payload, max_tokens=160, retries=2):
+def _reject_non_json_constant(value):
+    raise ValueError(f"non-standard JSON constant: {value}")
+
+
+def chat_json(
+    tracer,
+    case_id,
+    agent,
+    system,
+    payload,
+    max_tokens=160,
+    retries=2,
+    response_validator=None,
+):
     """Goi model va parse JSON tra ve. Tra ve None neu that bai sau retries."""
     user_msg = json.dumps(payload, ensure_ascii=False)
     for attempt in range(1, retries + 1):
@@ -31,6 +44,11 @@ def chat_json(tracer, case_id, agent, system, payload, max_tokens=160, retries=2
             body = resp.json()
             content = body.get("message", {}).get("content", "")
             latency_ms = int((time.time() - t0) * 1000)
+            parsed = json.loads(content, parse_constant=_reject_non_json_constant)
+            if response_validator is not None:
+                validation_error = response_validator(parsed)
+                if validation_error:
+                    raise ValueError(validation_error)
             tracer.log(
                 case_id,
                 agent,
@@ -43,8 +61,8 @@ def chat_json(tracer, case_id, agent, system, payload, max_tokens=160, retries=2
                 prompt_tokens=body.get("prompt_eval_count"),
                 output_tokens=body.get("eval_count"),
             )
-            return json.loads(content)
-        except (requests.RequestException, json.JSONDecodeError, KeyError) as exc:
+            return parsed
+        except (requests.RequestException, json.JSONDecodeError, KeyError, ValueError) as exc:
             tracer.log(
                 case_id,
                 agent,
@@ -52,5 +70,6 @@ def chat_json(tracer, case_id, agent, system, payload, max_tokens=160, retries=2
                 model=config.MODEL_NAME,
                 attempt=attempt,
                 error=str(exc)[:300],
+                latency_ms=int((time.time() - t0) * 1000),
             )
     return None

@@ -1,0 +1,1660 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Demo 2 phút cho hệ thống Multi-Agent E-commerce Dispute Resolution">
+  <title>Demo Multi-Agent E-commerce Dispute Resolution</title>
+  <style>
+    :root {
+      --bg: #f4f6ee;
+      --surface: #ffffff;
+      --surface-2: #f9faf5;
+      --ink: #16180f;
+      --muted: #66705d;
+      --line: #dfe4d8;
+      --lime: #dff3a9;
+      --lime-strong: #aed85a;
+      --purple: #ddd1ff;
+      --orange: #ffd8c4;
+      --blue: #cfe8ff;
+      --green: #198754;
+      --red: #c64635;
+      --shadow: 0 18px 50px rgba(31, 42, 21, 0.09);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(223, 243, 169, 0.55), transparent 28%),
+        radial-gradient(circle at 87% 22%, rgba(221, 209, 255, 0.42), transparent 30%),
+        var(--bg);
+      overflow-x: hidden;
+    }
+
+    button {
+      color: inherit;
+      font: inherit;
+    }
+
+    button:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #2c63e5;
+      outline-offset: 3px;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      width: min(1480px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 20px 0 14px;
+      border-bottom: 1px solid rgba(22, 24, 15, 0.13);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 13px;
+      background: var(--ink);
+      color: white;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 3px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .brand-title {
+      margin: 0;
+      overflow: hidden;
+      font-size: clamp(0.95rem, 2vw, 1.1rem);
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .top-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+      backdrop-filter: blur(12px);
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #26b866;
+      box-shadow: 0 0 0 5px rgba(38, 184, 102, 0.13);
+    }
+
+    main {
+      display: grid;
+      width: 100%;
+      min-height: 0;
+    }
+
+    .slide {
+      display: none;
+      width: min(1480px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: clamp(28px, 4vw, 60px) 0 32px;
+      animation: slide-in 420ms ease both;
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    @keyframes slide-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .slide-kicker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .slide-kicker::before {
+      width: 34px;
+      height: 3px;
+      border-radius: 3px;
+      background: var(--lime-strong);
+      content: "";
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      text-wrap: balance;
+    }
+
+    h1 {
+      max-width: 1040px;
+      margin: 0;
+      font-size: clamp(3rem, 7.3vw, 7.8rem);
+      font-weight: 720;
+      letter-spacing: -0.065em;
+      line-height: 0.94;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(2.15rem, 4.8vw, 4.8rem);
+      font-weight: 730;
+      letter-spacing: -0.052em;
+      line-height: 1;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(1.06rem, 2vw, 1.38rem);
+      line-height: 1.55;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(290px, 0.75fr);
+      gap: clamp(28px, 5vw, 76px);
+      align-items: end;
+      min-height: min(620px, calc(100vh - 240px));
+    }
+
+    .hero-copy {
+      align-self: center;
+    }
+
+    .hero-highlight {
+      display: inline-block;
+      margin-top: 7px;
+      padding: 0 0.12em 0.08em;
+      border-radius: 0.2em;
+      background: linear-gradient(180deg, transparent 42%, var(--lime) 42%);
+    }
+
+    .score-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 4vw, 48px);
+      border-radius: var(--radius-xl);
+      background: var(--ink);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+
+    .score-card::after {
+      position: absolute;
+      right: -72px;
+      bottom: -94px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: var(--lime-strong);
+      opacity: 0.26;
+      content: "";
+    }
+
+    .score-label {
+      color: rgba(255, 255, 255, 0.64);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .score-number {
+      position: relative;
+      z-index: 1;
+      margin: 16px 0 4px;
+      font-size: clamp(5rem, 10vw, 8.4rem);
+      font-weight: 900;
+      letter-spacing: -0.075em;
+      line-height: 0.82;
+    }
+
+    .score-unit {
+      position: relative;
+      z-index: 1;
+      font-weight: 800;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .mini-metric {
+      padding: 14px;
+      border: 1px solid rgba(22, 24, 15, 0.1);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(10px);
+    }
+
+    .mini-metric strong {
+      display: block;
+      font-size: 1.2rem;
+    }
+
+    .mini-metric span {
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .architecture-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.65fr);
+      gap: 24px;
+      margin-top: 28px;
+      align-items: stretch;
+    }
+
+    .architecture-board,
+    .detail-panel,
+    .case-panel,
+    .trace-panel,
+    .rubric-card {
+      border: 1px solid rgba(22, 24, 15, 0.11);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .architecture-board {
+      display: grid;
+      gap: 12px;
+      padding: clamp(18px, 2.8vw, 32px);
+    }
+
+    .flow-line {
+      display: grid;
+      grid-template-columns: minmax(112px, 0.72fr) 38px minmax(120px, 0.9fr) 38px minmax(140px, 1fr);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-line.specialist-line {
+      grid-template-columns: minmax(112px, 0.72fr) 38px minmax(0, 2fr);
+    }
+
+    .flow-arrow {
+      color: #89917f;
+      font-size: 1.45rem;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .agent-card {
+      position: relative;
+      width: 100%;
+      min-height: 98px;
+      padding: 16px;
+      border: 1px solid rgba(22, 24, 15, 0.12);
+      border-radius: var(--radius-lg);
+      background: var(--surface-2);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .agent-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(22, 24, 15, 0.35);
+      box-shadow: 0 12px 24px rgba(25, 39, 15, 0.08);
+    }
+
+    .agent-card.selected {
+      border-color: var(--ink);
+      box-shadow: inset 0 0 0 2px var(--ink);
+    }
+
+    .agent-card.lime { background: var(--lime); }
+    .agent-card.purple { background: var(--purple); }
+    .agent-card.orange { background: var(--orange); }
+    .agent-card.blue { background: var(--blue); }
+    .agent-card.dark { background: var(--ink); color: white; }
+
+    .agent-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .agent-code {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--ink);
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+
+    .agent-card.dark .agent-code {
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+    }
+
+    .type-badge {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.62);
+      color: #4c5544;
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .agent-card.dark .type-badge {
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .agent-card p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.74rem;
+      line-height: 1.35;
+    }
+
+    .agent-card.dark p {
+      color: rgba(255, 255, 255, 0.66);
+    }
+
+    .specialist-group {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      border: 1px dashed #afb7a5;
+      border-radius: 24px;
+      background: #f6f8f1;
+    }
+
+    .group-label {
+      grid-column: 1 / -1;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 850;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .detail-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100%;
+      padding: clamp(22px, 3vw, 34px);
+      background: var(--ink);
+      color: white;
+    }
+
+    .detail-panel .eyebrow {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .detail-title {
+      margin: 18px 0 10px;
+      font-size: clamp(1.8rem, 3vw, 2.7rem);
+      letter-spacing: -0.045em;
+    }
+
+    .detail-copy {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.68);
+      line-height: 1.6;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      margin: 28px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .detail-list li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .detail-list li::before {
+      flex: 0 0 auto;
+      width: 8px;
+      height: 8px;
+      margin-top: 0.38em;
+      border-radius: 50%;
+      background: var(--lime-strong);
+      content: "";
+    }
+
+    .principle-box {
+      margin-top: 28px;
+      padding: 17px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.07);
+      font-size: 0.86rem;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .demo-layout {
+      display: grid;
+      grid-template-columns: minmax(250px, 0.72fr) minmax(370px, 1.1fr) minmax(290px, 0.78fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .case-panel,
+    .trace-panel {
+      padding: 24px;
+    }
+
+    .case-panel {
+      background: var(--lime);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .case-id {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: white;
+      font-size: 0.74rem;
+      font-weight: 850;
+    }
+
+    .customer-message {
+      margin: 0 0 20px;
+      font-size: 1.05rem;
+      font-weight: 720;
+      line-height: 1.45;
+    }
+
+    .facts-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .fact-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 11px 12px;
+      border: 1px solid rgba(22, 24, 15, 0.1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.55);
+      font-size: 0.8rem;
+    }
+
+    .fact-row span {
+      color: #58604f;
+    }
+
+    .fact-row strong {
+      text-align: right;
+    }
+
+    .run-button,
+    .reset-button,
+    .nav-button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+    }
+
+    .run-button:hover,
+    .reset-button:hover,
+    .nav-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .run-button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: var(--ink);
+      color: white;
+      font-weight: 850;
+    }
+
+    .run-button:disabled {
+      cursor: wait;
+      opacity: 0.58;
+    }
+
+    .pipeline-panel {
+      padding: 24px;
+      border: 1px solid rgba(22, 24, 15, 0.11);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: var(--shadow);
+    }
+
+    .case-steps {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .case-step {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-2);
+      opacity: 0.52;
+      transition: opacity 220ms ease, transform 220ms ease, border-color 220ms ease,
+        background 220ms ease;
+    }
+
+    .case-step.active {
+      transform: translateX(5px);
+      border-color: var(--ink);
+      background: var(--purple);
+      opacity: 1;
+    }
+
+    .case-step.done {
+      background: #e6f4d0;
+      opacity: 1;
+    }
+
+    .step-number {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 10px;
+      background: white;
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+
+    .step-copy strong {
+      display: block;
+      font-size: 0.84rem;
+    }
+
+    .step-copy span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .step-state {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .case-step.active .step-state {
+      color: var(--ink);
+    }
+
+    .case-step.done .step-state {
+      color: var(--green);
+    }
+
+    .stage-detail {
+      min-height: 76px;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--ink);
+      color: rgba(255, 255, 255, 0.74);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .stage-detail strong {
+      color: white;
+    }
+
+    .trace-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 480px;
+      background: var(--ink);
+      color: white;
+    }
+
+    .trace-panel .panel-head {
+      margin-bottom: 12px;
+    }
+
+    .trace-panel .eyebrow {
+      color: rgba(255, 255, 255, 0.48);
+    }
+
+    .reset-button {
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 750;
+    }
+
+    .trace-log {
+      display: grid;
+      align-content: start;
+      flex: 1;
+      gap: 8px;
+      min-height: 190px;
+      max-height: 250px;
+      overflow: auto;
+      padding-right: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.71rem;
+    }
+
+    .trace-entry {
+      padding: 9px 10px;
+      border-left: 3px solid var(--lime-strong);
+      border-radius: 0 8px 8px 0;
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.74);
+      animation: log-in 220ms ease both;
+    }
+
+    .trace-entry.correction {
+      border-left-color: #ff9f80;
+      background: rgba(255, 123, 88, 0.12);
+      color: #ffd8ca;
+    }
+
+    @keyframes log-in {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .final-output {
+      margin-top: 16px;
+      padding: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      opacity: 0.36;
+      transition: opacity 260ms ease, border-color 260ms ease;
+    }
+
+    .final-output.visible {
+      border-color: rgba(174, 216, 90, 0.75);
+      opacity: 1;
+    }
+
+    .output-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 0;
+      font-size: 0.78rem;
+    }
+
+    .output-row span {
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .output-row strong {
+      text-align: right;
+    }
+
+    .refund-value {
+      color: var(--lime);
+    }
+
+    .rubric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .rubric-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 170px;
+      padding: 22px;
+      box-shadow: none;
+    }
+
+    .rubric-card:nth-child(1),
+    .rubric-card:nth-child(6) { background: var(--lime); }
+    .rubric-card:nth-child(2) { background: var(--purple); }
+    .rubric-card:nth-child(3) { background: var(--orange); }
+    .rubric-card:nth-child(4) { background: var(--blue); }
+
+    .rubric-weight {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .rubric-card h3 {
+      margin-top: 17px;
+      font-size: 1.03rem;
+    }
+
+    .rubric-card p {
+      margin: 8px 0 0;
+      color: #596151;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .check-mark {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      color: var(--green);
+      font-size: 1.2rem;
+      font-weight: 1000;
+    }
+
+    .closing-strip {
+      display: grid;
+      grid-template-columns: 1.2fr repeat(4, 0.46fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .closing-message,
+    .closing-metric {
+      padding: 18px;
+      border: 1px solid rgba(22, 24, 15, 0.11);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .closing-message {
+      background: var(--ink);
+      color: white;
+      font-weight: 780;
+      line-height: 1.4;
+    }
+
+    .closing-message span {
+      color: var(--lime);
+    }
+
+    .closing-metric strong {
+      display: block;
+      font-size: 1.35rem;
+    }
+
+    .closing-metric span {
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 750;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      width: min(1480px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 14px 0 18px;
+      border-top: 1px solid rgba(22, 24, 15, 0.13);
+    }
+
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .slide-time {
+      min-width: 72px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 850;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .progress-dot {
+      width: 9px;
+      height: 9px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: #c8cec0;
+      cursor: pointer;
+      transition: width 180ms ease, border-radius 180ms ease, background 180ms ease;
+    }
+
+    .progress-dot.active {
+      width: 28px;
+      border-radius: 999px;
+      background: var(--ink);
+    }
+
+    .nav-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-button {
+      min-width: 104px;
+      padding: 11px 15px;
+      border-radius: 12px;
+      background: var(--ink);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 820;
+    }
+
+    .nav-button.secondary {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+    }
+
+    .nav-button:disabled {
+      cursor: default;
+      opacity: 0.34;
+    }
+
+    .keyboard-hint {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 650;
+    }
+
+    @media (max-width: 1120px) {
+      .hero-grid,
+      .architecture-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-grid {
+        min-height: auto;
+      }
+
+      .score-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        column-gap: 22px;
+      }
+
+      .score-label,
+      .score-unit {
+        grid-column: 2;
+      }
+
+      .score-number {
+        grid-row: 1 / 3;
+        margin: 0;
+      }
+
+      .demo-layout {
+        grid-template-columns: minmax(250px, 0.7fr) minmax(390px, 1.3fr);
+      }
+
+      .trace-panel {
+        grid-column: 1 / -1;
+        min-height: 360px;
+      }
+
+      .rubric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .closing-strip {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .closing-message {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .topbar,
+      .slide,
+      .controls {
+        width: min(100% - 28px, 1480px);
+      }
+
+      .top-status,
+      .keyboard-hint {
+        display: none;
+      }
+
+      .slide {
+        padding-top: 26px;
+      }
+
+      h1 {
+        font-size: clamp(3.1rem, 15vw, 5.4rem);
+      }
+
+      .hero-metrics,
+      .rubric-grid,
+      .demo-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .score-card {
+        display: block;
+      }
+
+      .score-number {
+        margin: 16px 0 4px;
+      }
+
+      .flow-line,
+      .flow-line.specialist-line {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-arrow {
+        transform: rotate(90deg);
+      }
+
+      .specialist-group {
+        grid-template-columns: 1fr;
+      }
+
+      .rubric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .closing-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .closing-message {
+        grid-column: 1 / -1;
+      }
+
+      .nav-button {
+        min-width: 88px;
+      }
+
+      .slide-time {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media print {
+      body { background: white; }
+      .topbar, .controls { display: none; }
+      .slide, .slide.active {
+        display: block;
+        width: 100%;
+        min-height: 95vh;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">EC</div>
+        <div class="brand-copy">
+          <p class="eyebrow">K3 · Day 09</p>
+          <p class="brand-title">Multi-Agent E-commerce Dispute Resolution</p>
+        </div>
+      </div>
+      <div class="top-status" aria-label="Trạng thái hệ thống">
+        <span class="status-dot" aria-hidden="true"></span>
+        Ollama local · llama3.2:3b
+      </div>
+    </header>
+
+    <main id="presentation">
+      <section class="slide active" data-title="Mở đầu" aria-labelledby="hero-title">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="slide-kicker">Slide 1 · 0:00–0:20</p>
+            <h1 id="hero-title">
+              LLM phân tích.<br>
+              <span class="hero-highlight">Dữ liệu quyết định.</span>
+            </h1>
+            <p class="lead">
+              Hệ thống hybrid multi-agent điều tra 50 khiếu nại Olist, kiểm chứng mọi
+              quyết định tài chính bằng CSV và business rule deterministic.
+            </p>
+            <div class="hero-metrics" aria-label="Số liệu chính">
+              <div class="mini-metric"><strong>6</strong><span>vai trò agent</span></div>
+              <div class="mini-metric"><strong>200</strong><span>LLM calls thật</span></div>
+              <div class="mini-metric"><strong>0</strong><span>output errors</span></div>
+            </div>
+          </div>
+          <aside class="score-card" aria-label="Điểm đạt được">
+            <span class="score-label">Kết quả cuối</span>
+            <div class="score-number">100</div>
+            <div class="score-unit">điểm · 50/50 cases</div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Kiến trúc" aria-labelledby="architecture-title" aria-hidden="true">
+        <p class="slide-kicker">Slide 2 · 0:20–0:55</p>
+        <h2 id="architecture-title">Kiến trúc 6 vai trò,<br>2 lớp kiểm chứng</h2>
+        <div class="architecture-layout">
+          <div class="architecture-board" aria-label="Sơ đồ kiến trúc tương tác">
+            <div class="flow-line">
+              <button class="agent-card selected" data-role="input" type="button">
+                <div class="agent-topline">
+                  <span class="agent-code">IN</span>
+                  <span class="type-badge">JSON</span>
+                </div>
+                <h3>Input case</h3>
+                <p>case_id + claimed_order_id</p>
+              </button>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <button class="agent-card lime" data-role="coordinator" type="button">
+                <div class="agent-topline">
+                  <span class="agent-code">C</span>
+                  <span class="type-badge">Code</span>
+                </div>
+                <h3>Coordinator</h3>
+                <p>Điều phối và handoff</p>
+              </button>
+              <div class="flow-arrow" aria-hidden="true">↔</div>
+              <button class="agent-card blue" data-role="data" type="button">
+                <div class="agent-topline">
+                  <span class="agent-code">DB</span>
+                  <span class="type-badge">Pandas</span>
+                </div>
+                <h3>Data Access Tool</h3>
+                <p>3 CSV → fact sheet</p>
+              </button>
+            </div>
+
+            <div class="flow-line specialist-line">
+              <button class="agent-card lime" data-role="coordinator" type="button">
+                <div class="agent-topline">
+                  <span class="agent-code">C</span>
+                  <span class="type-badge">Handoff</span>
+                </div>
+                <h3>Domain routing</h3>
+                <p>Mỗi agent chỉ thấy dữ liệu cần thiết</p>
+              </button>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="specialist-group">
+                <span class="group-label">3 Specialist LLM Agents · chạy tuần tự</span>
+                <button class="agent-card purple" data-role="seller" type="button">
+                  <div class="agent-topline"><span class="agent-code">O/S</span><span class="type-badge">LLM</span></div>
+                  <h3>Order & Seller</h3>
+                  <p>Status + shipping limit</p>
+                </button>
+                <button class="agent-card orange" data-role="payment" type="button">
+                  <div class="agent-topline"><span class="agent-code">PAY</span><span class="type-badge">LLM</span></div>
+                  <h3>Payment</h3>
+                  <p>Payment reconciliation</p>
+                </button>
+                <button class="agent-card blue" data-role="delivery" type="button">
+                  <div class="agent-topline"><span class="agent-code">DEL</span><span class="type-badge">LLM</span></div>
+                  <h3>Delivery</h3>
+                  <p>Actual vs estimate</p>
+                </button>
+              </div>
+            </div>
+
+            <div class="flow-line">
+              <button class="agent-card purple" data-role="policy" type="button">
+                <div class="agent-topline"><span class="agent-code">P</span><span class="type-badge">LLM</span></div>
+                <h3>Policy Agent</h3>
+                <p>Findings → proposal</p>
+              </button>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <button class="agent-card dark" data-role="verifier" type="button">
+                <div class="agent-topline"><span class="agent-code">V</span><span class="type-badge">Rules</span></div>
+                <h3>Verifier Agent</h3>
+                <p>Phủ quyết LLM nếu sai</p>
+              </button>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <button class="agent-card lime" data-role="output" type="button">
+                <div class="agent-topline"><span class="agent-code">OUT</span><span class="type-badge">JSON</span></div>
+                <h3>Verified output</h3>
+                <p>Schema + evidence + refund</p>
+              </button>
+            </div>
+          </div>
+
+          <aside class="detail-panel" aria-live="polite">
+            <div>
+              <p class="eyebrow">Chọn một khối để giải thích</p>
+              <h3 class="detail-title" id="detail-title">Input case</h3>
+              <p class="detail-copy" id="detail-copy">
+                Mỗi case cung cấp case ID, claimed order ID, customer message và policy version.
+              </p>
+              <ul class="detail-list" id="detail-list">
+                <li>Không tin nội dung khiếu nại làm nguồn sự thật.</li>
+                <li>Dùng claimed_order_id để truy xuất giao dịch.</li>
+              </ul>
+            </div>
+            <div class="principle-box">
+              Nguyên tắc: <strong>LLM đề xuất</strong> · <strong>CSV quyết định</strong>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Case demo" aria-labelledby="demo-title" aria-hidden="true">
+        <p class="slide-kicker">Slide 3 · 0:55–1:35</p>
+        <h2 id="demo-title">Demo EC_001:<br>Verifier sửa refund của LLM</h2>
+        <div class="demo-layout">
+          <article class="case-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Input + fact sheet</p>
+                <h3>Đơn giao trễ</h3>
+              </div>
+              <span class="case-id">EC_001</span>
+            </div>
+            <p class="customer-message">“Đơn hàng có dấu hiệu giao trễ. Hãy kiểm tra nguyên nhân và quyền lợi.”</p>
+            <div class="facts-grid">
+              <div class="fact-row"><span>Order status</span><strong>delivered</strong></div>
+              <div class="fact-row"><span>Delivered late</span><strong>Có</strong></div>
+              <div class="fact-row"><span>Seller handoff late</span><strong>Có</strong></div>
+              <div class="fact-row"><span>Payment total</span><strong>131.94 BRL</strong></div>
+              <div class="fact-row"><span>Freight total</span><strong>12.04 BRL</strong></div>
+            </div>
+            <button class="run-button" id="run-demo" type="button">▶ Chạy pipeline</button>
+          </article>
+
+          <article class="pipeline-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Handoff sequence</p>
+                <h3>5 bước xử lý</h3>
+              </div>
+            </div>
+            <ol class="case-steps" aria-label="Các bước xử lý case">
+              <li class="case-step" data-step="0">
+                <span class="step-number">1</span>
+                <span class="step-copy"><strong>Coordinator</strong><span>Tạo fact sheet từ CSV</span></span>
+                <span class="step-state">Chờ</span>
+              </li>
+              <li class="case-step" data-step="1">
+                <span class="step-number">2</span>
+                <span class="step-copy"><strong>3 Specialists</strong><span>Seller · Payment · Delivery</span></span>
+                <span class="step-state">Chờ</span>
+              </li>
+              <li class="case-step" data-step="2">
+                <span class="step-number">3</span>
+                <span class="step-copy"><strong>Policy Agent</strong><span>Đề xuất issue + refund</span></span>
+                <span class="step-state">Chờ</span>
+              </li>
+              <li class="case-step" data-step="3">
+                <span class="step-number">4</span>
+                <span class="step-copy"><strong>Verifier</strong><span>Tính lại từ rule</span></span>
+                <span class="step-state">Chờ</span>
+              </li>
+              <li class="case-step" data-step="4">
+                <span class="step-number">5</span>
+                <span class="step-copy"><strong>Output</strong><span>Ghi JSON đã kiểm chứng</span></span>
+                <span class="step-state">Chờ</span>
+              </li>
+            </ol>
+            <div class="stage-detail" id="stage-detail" aria-live="polite">
+              Nhấn <strong>Chạy pipeline</strong> để xem handoff thật của EC_001.
+            </div>
+          </article>
+
+          <aside class="trace-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Trace mô phỏng từ log thật</p>
+                <h3>Audit trail</h3>
+              </div>
+              <button class="reset-button" id="reset-demo" type="button">Reset</button>
+            </div>
+            <div class="trace-log" id="trace-log" aria-live="polite">
+              <div class="trace-entry">[ready] EC_001 đang chờ xử lý</div>
+            </div>
+            <div class="final-output" id="final-output">
+              <div class="output-row"><span>Primary issue</span><strong>late_delivery_seller</strong></div>
+              <div class="output-row"><span>Responsible</span><strong>seller</strong></div>
+              <div class="output-row"><span>Refund</span><strong class="refund-value">12.04 BRL</strong></div>
+              <div class="output-row"><span>Action</span><strong>refund_freight</strong></div>
+              <div class="output-row"><span>Confidence</span><strong>1.0</strong></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Vì sao 100" aria-labelledby="rubric-title" aria-hidden="true">
+        <p class="slide-kicker">Slide 4 · 1:35–2:00</p>
+        <h2 id="rubric-title">100 điểm nhờ đúng contract,<br>không nhờ model lớn</h2>
+        <div class="rubric-grid">
+          <article class="rubric-card">
+            <span class="rubric-weight">20%</span><span class="check-mark">✓</span>
+            <h3>Issue + confidence</h3>
+            <p>Rule đầu tiên khớp; final confidence 1.0 sau verification.</p>
+          </article>
+          <article class="rubric-card">
+            <span class="rubric-weight">20%</span><span class="check-mark">✓</span>
+            <h3>Affected entities</h3>
+            <p>Order, item, seller và payment ID lấy từ row thật.</p>
+          </article>
+          <article class="rubric-card">
+            <span class="rubric-weight">15%</span><span class="check-mark">✓</span>
+            <h3>Root cause + party</h3>
+            <p>Ánh xạ deterministic theo đúng sáu business rule.</p>
+          </article>
+          <article class="rubric-card">
+            <span class="rubric-weight">15%</span><span class="check-mark">✓</span>
+            <h3>Evidence</h3>
+            <p>ID thật, đúng quan hệ và không thêm seller evidence dư.</p>
+          </article>
+          <article class="rubric-card">
+            <span class="rubric-weight">20%</span><span class="check-mark">✓</span>
+            <h3>Financial resolution</h3>
+            <p>Cộng từ CSV, làm tròn hai chữ số, áp đúng refund.</p>
+          </article>
+          <article class="rubric-card">
+            <span class="rubric-weight">10%</span><span class="check-mark">✓</span>
+            <h3>Resolution action</h3>
+            <p>Action và case status ánh xạ cố định theo issue.</p>
+          </article>
+        </div>
+        <div class="closing-strip">
+          <div class="closing-message">
+            <span>LLM có thể sai.</span> Kiến trúc không cho phép lỗi đó đi vào quyết định tài chính cuối.
+          </div>
+          <div class="closing-metric"><strong>50/50</strong><span>outputs</span></div>
+          <div class="closing-metric"><strong>34</strong><span>proposals được sửa</span></div>
+          <div class="closing-metric"><strong>0</strong><span>errors / warnings</span></div>
+          <div class="closing-metric"><strong>100</strong><span>điểm</span></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="controls" aria-label="Điều khiển bài trình bày">
+      <div class="progress-wrap">
+        <span class="slide-time" id="slide-time">0:00–0:20</span>
+        <div class="progress-dots" id="progress-dots" aria-label="Chọn slide"></div>
+        <span class="keyboard-hint">Phím ← → để chuyển slide · R để chạy demo</span>
+      </div>
+      <div class="nav-group">
+        <button class="nav-button secondary" id="prev-slide" type="button">← Trước</button>
+        <button class="nav-button" id="next-slide" type="button">Tiếp →</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const dotsHost = document.getElementById("progress-dots");
+      const prevButton = document.getElementById("prev-slide");
+      const nextButton = document.getElementById("next-slide");
+      const timeLabel = document.getElementById("slide-time");
+      const slideTimes = ["0:00–0:20", "0:20–0:55", "0:55–1:35", "1:35–2:00"];
+      let activeSlide = 0;
+
+      const dots = slides.map((slide, index) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "progress-dot";
+        dot.setAttribute("aria-label", `Mở slide ${index + 1}: ${slide.dataset.title}`);
+        dot.addEventListener("click", () => showSlide(index));
+        dotsHost.appendChild(dot);
+        return dot;
+      });
+
+      function showSlide(index) {
+        activeSlide = Math.max(0, Math.min(index, slides.length - 1));
+        slides.forEach((slide, slideIndex) => {
+          const isActive = slideIndex === activeSlide;
+          slide.classList.toggle("active", isActive);
+          slide.setAttribute("aria-hidden", String(!isActive));
+        });
+        dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === activeSlide));
+        prevButton.disabled = activeSlide === 0;
+        nextButton.disabled = activeSlide === slides.length - 1;
+        nextButton.textContent = activeSlide === slides.length - 1 ? "Hoàn tất ✓" : "Tiếp →";
+        timeLabel.textContent = slideTimes[activeSlide];
+        document.title = `${activeSlide + 1}/${slides.length} · ${slides[activeSlide].dataset.title}`;
+      }
+
+      prevButton.addEventListener("click", () => showSlide(activeSlide - 1));
+      nextButton.addEventListener("click", () => {
+        if (activeSlide < slides.length - 1) showSlide(activeSlide + 1);
+      });
+
+      const roleDetails = {
+        input: {
+          title: "Input case",
+          copy: "Mỗi case cung cấp case ID, claimed order ID, customer message và policy version.",
+          bullets: [
+            "Không tin nội dung khiếu nại làm nguồn sự thật.",
+            "Dùng claimed_order_id để truy xuất giao dịch."
+          ]
+        },
+        coordinator: {
+          title: "Coordinator Agent",
+          copy: "Điều phối toàn bộ workflow, tạo handoff, gom findings và chỉ ghi output sau verification.",
+          bullets: [
+            "1 case → 5 handoff events.",
+            "Ghi case_received, facts_compiled và output_written."
+          ]
+        },
+        data: {
+          title: "Data Access Tool",
+          copy: "Pandas truy xuất orders, order_items và order_payments rồi dựng fact sheet deterministic.",
+          bullets: [
+            "Tính item, freight và payment total.",
+            "So sánh delivery estimate và seller shipping limit."
+          ]
+        },
+        seller: {
+          title: "Order & Seller Agent",
+          copy: "Chỉ nhìn status, item, seller, shipping limit và thời điểm carrier nhận hàng.",
+          bullets: [
+            "Phát hiện seller bàn giao quá hạn.",
+            "Trả finding JSON riêng qua Llama 3.2 3B."
+          ]
+        },
+        payment: {
+          title: "Payment Agent",
+          copy: "Đối soát các payment row với item total cộng freight total trong sai số 0.10 BRL.",
+          bullets: [
+            "Không nhân payment_value với installments.",
+            "Phân biệt split payment hợp lệ với thu trùng."
+          ]
+        },
+        delivery: {
+          title: "Delivery Agent",
+          copy: "So sánh ngày giao thực tế với ngày giao dự kiến trên dữ liệu order.",
+          bullets: [
+            "Không suy đoán timestamp bị thiếu.",
+            "Trả delivered_after_estimate trong finding."
+          ]
+        },
+        policy: {
+          title: "Policy Agent",
+          copy: "Nhận ba findings và đề xuất primary issue cùng refund theo sáu rule ưu tiên.",
+          bullets: [
+            "Đây chỉ là proposal, chưa phải final answer.",
+            "Trace thật mới nhất cho thấy 35/50 proposal cần được sửa."
+          ]
+        },
+        verifier: {
+          title: "Deterministic Verifier",
+          copy: "Tính lại rule và refund từ fact sheet, phủ quyết proposal sai trước khi ghi output.",
+          bullets: [
+            "LLM không quyết định số tiền cuối.",
+            "Correction được ghi rõ trong trace để audit."
+          ]
+        },
+        output: {
+          title: "Verified output",
+          copy: "JSON cuối chứa issue, confidence, entities, root cause, evidence, tiền và action đúng schema.",
+          bullets: [
+            "ID được dựng từ row thật, không do LLM tự tạo.",
+            "Independent verifier: 50 files, 0 errors, 0 warnings."
+          ]
+        }
+      };
+
+      const detailTitle = document.getElementById("detail-title");
+      const detailCopy = document.getElementById("detail-copy");
+      const detailList = document.getElementById("detail-list");
+      const agentCards = Array.from(document.querySelectorAll(".agent-card[data-role]"));
+
+      agentCards.forEach((card) => {
+        card.addEventListener("click", () => {
+          const detail = roleDetails[card.dataset.role];
+          agentCards.forEach((candidate) => candidate.classList.remove("selected"));
+          document.querySelectorAll(`[data-role="${card.dataset.role}"]`).forEach((candidate) => {
+            candidate.classList.add("selected");
+          });
+          detailTitle.textContent = detail.title;
+          detailCopy.textContent = detail.copy;
+          detailList.replaceChildren(...detail.bullets.map((bullet) => {
+            const item = document.createElement("li");
+            item.textContent = bullet;
+            return item;
+          }));
+        });
+      });
+
+      const runButton = document.getElementById("run-demo");
+      const resetButton = document.getElementById("reset-demo");
+      const traceLog = document.getElementById("trace-log");
+      const finalOutput = document.getElementById("final-output");
+      const stageDetail = document.getElementById("stage-detail");
+      const caseSteps = Array.from(document.querySelectorAll(".case-step"));
+      let demoToken = 0;
+
+      const demoStages = [
+        {
+          detail: "<strong>Coordinator:</strong> order delivered · 1 item · 1 payment · payment_total 131.94 BRL",
+          log: "[facts_compiled] status=delivered, items=1, payments=1"
+        },
+        {
+          detail: "<strong>Specialists:</strong> seller handoff late = true · payment matches = true · delivered late = true",
+          log: "[findings] seller_late=true · payment_match=true · delivery_late=true"
+        },
+        {
+          detail: "<strong>Policy proposal:</strong> late_delivery_seller nhưng đề xuất refund = 0 BRL",
+          log: "[proposal] issue=late_delivery_seller · refund=0.00"
+        },
+        {
+          detail: "<strong>Verifier correction:</strong> rule yêu cầu hoàn toàn bộ freight: 0.00 → 12.04 BRL",
+          log: "[verification] correction: refund 0.00 → 12.04",
+          correction: true
+        },
+        {
+          detail: "<strong>Verified output:</strong> issue đúng · seller đúng · refund đúng · action đúng · confidence 1.0",
+          log: "[output_written] late_delivery_seller · refund=12.04"
+        }
+      ];
+
+      const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+      function resetDemo() {
+        demoToken += 1;
+        runButton.disabled = false;
+        runButton.textContent = "▶ Chạy pipeline";
+        traceLog.innerHTML = '<div class="trace-entry">[ready] EC_001 đang chờ xử lý</div>';
+        finalOutput.classList.remove("visible");
+        stageDetail.innerHTML = 'Nhấn <strong>Chạy pipeline</strong> để xem handoff thật của EC_001.';
+        caseSteps.forEach((step) => {
+          step.classList.remove("active", "done");
+          step.querySelector(".step-state").textContent = "Chờ";
+        });
+      }
+
+      async function runDemo() {
+        resetDemo();
+        const token = demoToken;
+        runButton.disabled = true;
+        runButton.textContent = "Đang chạy…";
+        traceLog.innerHTML = "";
+
+        for (let index = 0; index < demoStages.length; index += 1) {
+          await wait(index === 0 ? 300 : 820);
+          if (token !== demoToken) return;
+
+          caseSteps.forEach((step, stepIndex) => {
+            step.classList.toggle("active", stepIndex === index);
+            step.classList.toggle("done", stepIndex < index);
+            step.querySelector(".step-state").textContent =
+              stepIndex < index ? "Xong" : stepIndex === index ? "Đang chạy" : "Chờ";
+          });
+
+          const stage = demoStages[index];
+          stageDetail.innerHTML = stage.detail;
+          const entry = document.createElement("div");
+          entry.className = `trace-entry${stage.correction ? " correction" : ""}`;
+          entry.textContent = stage.log;
+          traceLog.appendChild(entry);
+          traceLog.scrollTop = traceLog.scrollHeight;
+        }
+
+        await wait(420);
+        if (token !== demoToken) return;
+        caseSteps.forEach((step) => {
+          step.classList.remove("active");
+          step.classList.add("done");
+          step.querySelector(".step-state").textContent = "Xong";
+        });
+        finalOutput.classList.add("visible");
+        runButton.disabled = false;
+        runButton.textContent = "↻ Chạy lại";
+      }
+
+      runButton.addEventListener("click", runDemo);
+      resetButton.addEventListener("click", resetDemo);
+
+      document.addEventListener("keydown", (event) => {
+        const target = event.target;
+        const typing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+        if (typing) return;
+        if (event.key === "ArrowRight" || event.key === "PageDown") showSlide(activeSlide + 1);
+        if (event.key === "ArrowLeft" || event.key === "PageUp") showSlide(activeSlide - 1);
+        if (event.key.toLowerCase() === "r" && activeSlide === 2) runDemo();
+        if (/^[1-4]$/.test(event.key)) showSlide(Number(event.key) - 1);
+      });
+
+      const requestedSlide = Number(new URLSearchParams(window.location.search).get("slide")) - 1;
+      showSlide(Number.isInteger(requestedSlide) && requestedSlide >= 0 ? requestedSlide : 0);
+      resetDemo();
+    })();
+  </script>
+</body>
+</html>

@@ -1,5 +1,14 @@
 # K3 Day 09 - Multi-Agent E-commerce Dispute Resolution
 
+## 0. Nhóm thực hiện và phân công
+
+| MSSV        | Họ và tên               | Vai trò                              | Phần việc chính                                                                                                                                    |
+| ----------- | ----------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2A202601279 | Phạm Nguyễn Hưng Nguyên | Pipeline & Agents lead               | Data tool + fact sheet, 4 LLM agent + Verifier runtime, policy engine, coordinator, trace (`src/data_access.py`, `src/agents.py`, `src/llm_client.py`, `src/policy_engine.py`, `src/run_all.py`, `src/tracer.py`, `src/config.py`); chạy batch 50 case |
+| 2A202601813 | Nguyễn Văn Tuấn Anh     | Verification & Delivery lead         | Handoff contract, full-output validator, 2 script verify độc lập, đóng gói submission, trang demo (`src/handoffs.py`, `src/output_validator.py`, `scripts/verify_outputs.py`, `scripts/verify_trace.py`, `scripts/package_submission.py`, `demo.html`) |
+
+Báo cáo cá nhân tương ứng: `individual_01279_PhamNguyenHungNguyen.md` và `individual_01813_NguyenVanTuanAnh.md` (đặt ở root repo).
+
 ## 1. Bài toán
 
 Xây dựng một hệ thống multi-agent để điều tra 50 yêu cầu hỗ trợ của khách hàng trên dữ liệu Olist. Với mỗi case, hệ thống phải đối chiếu nhiều nguồn dữ liệu, xác định vấn đề, bên chịu trách nhiệm, bằng chứng, khoản hoàn đề xuất và hành động xử lý.
@@ -200,3 +209,23 @@ Trong repo phải có thêm:
 2. Khi nộp bài, chỉ nén folder `output/` thành file zip; không đưa source code, `.env` hoặc các file audit vào zip này.
 3. Luôn commit toàn bộ source code lên repo trước khi nộp file output zip để chấm điểm.
 4. API key và secret phải đặt trong file `.env` và không được commit. Tên model sử dụng phải được khai báo rõ trong source code, đồng thời ghi lại trong `metadata.json` (Tức là model name không ghi vào .env, cho vào code để chấm)
+
+## 10. Kiểm tra và đóng gói bài K3 của repo này
+
+Chạy lần lượt từ root repo:
+
+```bash
+python -m src.run_all
+python -B scripts/verify_outputs.py
+python -B scripts/verify_trace.py
+python -B scripts/package_submission.py
+```
+
+Hai ZIP được tạo để đáp ứng đồng thời hai biểu mẫu hướng dẫn:
+
+- `output.zip`: đúng yêu cầu mục 8 của README, chỉ chứa `output/EC_001.json` đến `output/EC_050.json`.
+- `submission.zip`: đúng cấu trúc Codelab, gồm đúng 50 JSON trong `output/` cùng `architecture.md`, `trace.jsonl` và `metadata.json` ở root ZIP.
+
+Nguồn chuẩn của trace và metadata trong repo vẫn là `logging/trace.jsonl` và `logging/metadata.json`; script đóng gói ánh xạ hai file này về root của `submission.zip`. `submission.zip` được phép track để có thể nộp bằng link GitHub; `output.zip` vẫn được ignore và có thể tải trực tiếp lên LMS nếu biểu mẫu dùng validator của cohort.
+
+Pipeline dùng staging trong suốt giai đoạn xử lý và publish trace theo cơ chế atomic. Nếu batch bị ngắt trong lúc gọi agent, `output/` và trace thành công trước đó được giữ nguyên. Chỉ sau khi đủ 50 case qua full-output Verifier, 50 output mới được publish rồi trace mới thay thế bản cũ.

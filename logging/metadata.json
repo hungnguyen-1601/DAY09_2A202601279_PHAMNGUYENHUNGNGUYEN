@@ -1,16 +1,25 @@
 {
+  "cohort": "K3",
+  "repo_starter": "K3 Day 09 - Multi-Agent E-commerce Dispute Resolution",
+  "repository_url": "https://github.com/hungnguyen-1601/DAY09_2A202601279_PHAMNGUYENHUNGNGUYEN",
   "model": "llama3.2:3b",
   "model_full_name": "Meta Llama 3.2 3B Instruct",
-  "parameter_size": "3B",
+  "parameter_size": "3.2B",
   "provider": "ollama (local)",
-  "framework": "Custom Python multi-agent pipeline: Coordinator + 3 specialist LLM agents (Order&Seller, Payment, Delivery) + Policy Agent (LLM) + deterministic Verifier Agent (pandas over Olist CSVs)",
+  "framework": "Custom Python multi-agent pipeline: Coordinator + 3 specialist LLM agents (Order&Seller, Payment, Delivery) + Policy Agent (LLM) + deterministic full-output Verifier Agent over Olist CSV facts",
+  "tools": [
+    "Ollama local API",
+    "pandas"
+  ],
   "runtime": {
     "python": "3.10.11",
     "os": "Windows 10",
     "cpu": "AMD64 Family 25 Model 117 Stepping 2, AuthenticAMD",
     "inference": "Ollama local, CPU",
     "cases": 50,
-    "wall_time_seconds": 1061.8
+    "verified_outputs": 50,
+    "wall_time_seconds": 5329.0
   },
-  "policy_version": "EC_POLICY_V1"
+  "policy_version": "EC_POLICY_V1",
+  "trace_schema_version": 2
 }

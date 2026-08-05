@@ -105,6 +105,11 @@ def get_order_facts(order_id: str) -> dict:
         abs(payment_total - round(item_total + freight_total, 2))
         <= config.PAYMENT_TOLERANCE_BRL
     )
+    seller_handoff_assessment_complete = bool(items) and carrier_ts is not None
+    if pd.isna(carrier_ts):
+        seller_handoff_assessment_complete = False
+    if any(item["shipping_limit_date"] is None for item in items):
+        seller_handoff_assessment_complete = False
 
     return {
         "order_id": order_id,
@@ -123,4 +128,7 @@ def get_order_facts(order_id: str) -> dict:
         "delivered_after_estimate": delivered_after_estimate,
         "payment_matches_order_value": bool(payment_matches),
         "sellers_past_limit": sellers_past_limit,
+        "seller_handoff_assessment_complete": bool(
+            seller_handoff_assessment_complete
+        ),
     }

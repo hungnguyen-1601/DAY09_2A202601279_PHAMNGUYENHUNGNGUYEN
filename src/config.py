@@ -13,7 +13,7 @@ METADATA_PATH = LOG_DIR / "metadata.json"
 # Model name khai bao trong code theo yeu cau README muc 9.4.
 # Meta Llama 3.2 3B Instruct - 3B parameters (<= gioi han 10B), chay local qua Ollama.
 MODEL_NAME = "llama3.2:3b"
-MODEL_PARAMETER_SIZE = "3B"
+MODEL_PARAMETER_SIZE = "3.2B"
 MODEL_PROVIDER = "ollama (local)"
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 

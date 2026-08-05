@@ -65,23 +65,27 @@ def decide(facts: dict) -> dict:
     elif status == "unavailable" and payment_total > 0:
         issue = "unavailable_order_paid"
         refund = payment_total
-    elif facts["delivered_after_estimate"] and facts["sellers_past_limit"]:
+    elif facts["delivered_after_estimate"] is True and facts["sellers_past_limit"]:
         issue = "late_delivery_seller"
         refund = facts["freight_total"]
-    elif facts["delivered_after_estimate"]:
+    elif (
+        facts["delivered_after_estimate"] is True
+        and facts.get("seller_handoff_assessment_complete") is True
+    ):
         issue = "late_delivery_logistics"
         refund = facts["freight_total"]
     elif facts["n_payments"] >= 2 and facts["payment_matches_order_value"]:
         issue = "valid_split_payment"
         refund = 0.0
-    elif not facts["delivered_after_estimate"] and facts["payment_matches_order_value"]:
+    elif (
+        facts["delivered_after_estimate"] is False
+        and facts["payment_matches_order_value"]
+    ):
         issue = "unsupported_late_claim"
         refund = 0.0
     else:
-        # Bo 50 case chinh thuc khong roi vao day; fallback an toan nhat la
-        # bac bo claim khong co bang chung.
-        issue = "unsupported_late_claim"
-        refund = 0.0
+        # Fail closed: khong bien du lieu thieu thanh mot fact "giao dung han".
+        raise ValueError("Insufficient or conflicting facts for EC_POLICY_V1")
 
     rule = RULE_TABLE[issue]
     if rule["party"] is None:
@@ -105,18 +109,9 @@ def decide(facts: dict) -> dict:
     }
 
 
-def build_output(case_id: str, facts: dict, decision: dict) -> dict:
-    """Dung output JSON dung schema README muc 6 tu facts + decision."""
+def build_evidence_ids(facts: dict, decision: dict) -> list[str]:
+    """Dung danh sach evidence co that tu fact sheet, theo gioi han schema."""
     order_id = facts["order_id"]
-    item_ids = [f"{order_id}:{it['order_item_id']}" for it in facts["items"]]
-    seller_ids = []
-    for it in facts["items"]:
-        if it["seller_id"] not in seller_ids:
-            seller_ids.append(it["seller_id"])
-    payment_ids = [f"{order_id}:{p['payment_sequential']}" for p in facts["payments"]]
-
-    # Evidence: order + items + payments (+ seller neu seller chiu trach nhiem)
-    # + policy. Cat bot items/payments truoc neu vuot gioi han 10.
     responsible_sellers = [
         p["party_id"] for p in decision["responsible_parties"] if p["party_type"] == "seller"
     ]
@@ -134,13 +129,25 @@ def build_output(case_id: str, facts: dict, decision: dict) -> dict:
             ev_items.pop()
         else:
             ev_pays.pop()
-    evidence = (
+    return (
         [f"order:{order_id}"]
         + ev_items
         + ev_pays
         + ev_sellers
         + [f"policy:{decision['root_cause']}"]
-    )
+    )[: config.MAX_EVIDENCE]
+
+
+def build_output(case_id: str, facts: dict, decision: dict) -> dict:
+    """Dung output JSON dung schema README muc 6 tu facts + decision."""
+    order_id = facts["order_id"]
+    item_ids = [f"{order_id}:{it['order_item_id']}" for it in facts["items"]]
+    seller_ids = []
+    for it in facts["items"]:
+        if it["seller_id"] not in seller_ids:
+            seller_ids.append(it["seller_id"])
+    payment_ids = [f"{order_id}:{p['payment_sequential']}" for p in facts["payments"]]
+    evidence = build_evidence_ids(facts, decision)
 
     return {
         "case_id": case_id,
@@ -159,7 +166,7 @@ def build_output(case_id: str, facts: dict, decision: dict) -> dict:
             "ranked_causes": [{"cause_code": decision["root_cause"], "rank": 1}],
             "responsible_parties": decision["responsible_parties"],
         },
-        "evidence_ids": evidence[: config.MAX_EVIDENCE],
+        "evidence_ids": evidence,
         "financial_resolution": {
             "currency": "BRL",
             "item_total_brl": facts["item_total"],

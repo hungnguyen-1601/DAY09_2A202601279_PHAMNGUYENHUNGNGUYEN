@@ -1,4 +1,16 @@
 .env
+.env.*
+.cache/
+.venv/
+venv/
 __pycache__/
 *.pyc
+logging/trace.jsonl.tmp
+logging/metadata.json.tmp
+logging/output_staging_*/
+logging/output_publish_backup/
+logging/metadata_publish_backup.json
+logging/run_errors.log
 *.zip
+*.zip.tmp
+!submission.zip
