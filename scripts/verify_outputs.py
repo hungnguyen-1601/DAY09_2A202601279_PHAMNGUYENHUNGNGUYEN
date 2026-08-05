@@ -83,6 +83,8 @@ def main():
 
         if rca["ranked_causes"][0]["cause_code"] != cause:
             e(f"cause {rca['ranked_causes'][0]['cause_code']}, mong doi {cause}")
+        if rca["ranked_causes"] != [{"cause_code": cause, "rank": 1}]:
+            e(f"ranked_causes {rca['ranked_causes']}, mong doi dung 1 cause rank 1")
         if o["resolution_actions"] != [action]:
             e(f"actions {o['resolution_actions']}, mong doi [{action}]")
         ptypes = {p["party_type"] for p in rca["responsible_parties"]}
@@ -159,15 +161,53 @@ def main():
             warns.append(f"{cid}: khong rule nao khop (status={row['order_status']})")
         if expect and issue != expect:
             e(f"primary_issue {issue}, tinh lai tu CSV ra {expect}")
-        if issue == "late_delivery_seller":
-            pids = sorted(p["party_id"] for p in rca["responsible_parties"])
-            if pids != seller_late_ids[: len(pids)] and pids != seller_late_ids:
-                e(f"seller vi pham {pids} != {seller_late_ids}")
+        expected_parties = {
+            "canceled_order_paid": [
+                {"party_type": "platform", "party_id": "OLIST_PLATFORM"}
+            ],
+            "unavailable_order_paid": [
+                {"party_type": "platform", "party_id": "OLIST_PLATFORM"}
+            ],
+            "late_delivery_seller": [
+                {"party_type": "seller", "party_id": sid}
+                for sid in seller_late_ids
+            ],
+            "late_delivery_logistics": [
+                {
+                    "party_type": "logistics_provider",
+                    "party_id": "LOGISTICS_PROVIDER",
+                }
+            ],
+            "valid_split_payment": [],
+            "unsupported_late_claim": [],
+        }[issue]
+        if rca["responsible_parties"] != expected_parties:
+            e(
+                f"responsible_parties {rca['responsible_parties']} "
+                f"!= {expected_parties}"
+            )
 
         # evidence: dinh dang + ton tai
         valid_items = {f"{oid}:{int(i)}" for i in its["order_item_id"]}
         valid_pays = {f"{oid}:{int(s)}" for s in ps["payment_sequential"]}
         valid_sellers = set(its["seller_id"])
+        expected_seller_evidence = (
+            {f"seller:{sid}" for sid in seller_late_ids}
+            if issue == "late_delivery_seller"
+            else set()
+        )
+        expected_evidence = (
+            {f"order:{oid}", f"policy:{cause}"}
+            | {f"item:{x}" for x in valid_items}
+            | {f"payment:{x}" for x in valid_pays}
+            | expected_seller_evidence
+        )
+        if len(o["evidence_ids"]) != len(set(o["evidence_ids"])):
+            e("evidence co ID trung lap")
+        if set(o["evidence_ids"]) != expected_evidence:
+            missing = sorted(expected_evidence - set(o["evidence_ids"]))
+            extra = sorted(set(o["evidence_ids"]) - expected_evidence)
+            e(f"evidence chua day du/chinh xac; thieu={missing}, du={extra}")
         for ev in o["evidence_ids"]:
             parts = ev.split(":")
             kind = parts[0]
@@ -185,6 +225,24 @@ def main():
         # affected entities ton tai
         if ae["order_ids"] != [oid]:
             e(f"order_ids {ae['order_ids']}")
+        if len(ae["item_ids"]) != len(set(ae["item_ids"])):
+            e("item_ids bi trung")
+        if len(ae["seller_ids"]) != len(set(ae["seller_ids"])):
+            e("seller_ids bi trung")
+        if len(ae["payment_ids"]) != len(set(ae["payment_ids"])):
+            e("payment_ids bi trung")
+        if set(ae["item_ids"]) != valid_items:
+            e(f"item_ids khong day du: {ae['item_ids']} != {sorted(valid_items)}")
+        if set(ae["seller_ids"]) != valid_sellers:
+            e(
+                f"seller_ids khong day du: {ae['seller_ids']} "
+                f"!= {sorted(valid_sellers)}"
+            )
+        if set(ae["payment_ids"]) != valid_pays:
+            e(
+                f"payment_ids khong day du: {ae['payment_ids']} "
+                f"!= {sorted(valid_pays)}"
+            )
         for x in ae["item_ids"]:
             if x not in valid_items:
                 e(f"item_id la {x}")

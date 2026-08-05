@@ -6,50 +6,50 @@ README muc 4.
 """
 from . import config
 
-# confidence gan theo rule: cac rule dua tren truong don gia tri (status, tong
-# payment) co do chac chan cao hon rule phu thuoc nhieu moc thoi gian.
+# Verifier tinh lai deterministic tu CSV va sua moi proposal sai truoc khi ghi
+# output, nen confidence cua quyet dinh cuoi cung la 1.0.
 RULE_TABLE = {
     "canceled_order_paid": {
         "root_cause": "ORDER_CANCELED_AFTER_PAYMENT",
         "party": ("platform", "OLIST_PLATFORM"),
         "action": "issue_full_refund",
         "case_status": "action_required",
-        "confidence": 0.95,
+        "confidence": 1.0,
     },
     "unavailable_order_paid": {
         "root_cause": "ORDER_UNAVAILABLE_AFTER_PAYMENT",
         "party": ("platform", "OLIST_PLATFORM"),
         "action": "issue_full_refund",
         "case_status": "action_required",
-        "confidence": 0.95,
+        "confidence": 1.0,
     },
     "late_delivery_seller": {
         "root_cause": "SELLER_HANDOFF_AFTER_LIMIT",
         "party": ("seller", None),  # party_id = seller vi pham, dien luc runtime
         "action": "refund_freight",
         "case_status": "action_required",
-        "confidence": 0.93,
+        "confidence": 1.0,
     },
     "late_delivery_logistics": {
         "root_cause": "CARRIER_DELIVERED_AFTER_ESTIMATE",
         "party": ("logistics_provider", "LOGISTICS_PROVIDER"),
         "action": "refund_freight",
         "case_status": "action_required",
-        "confidence": 0.92,
+        "confidence": 1.0,
     },
     "valid_split_payment": {
         "root_cause": "MULTIPLE_PAYMENTS_RECONCILED",
         "party": None,
         "action": "explain_valid_split_payment",
         "case_status": "no_action",
-        "confidence": 0.9,
+        "confidence": 1.0,
     },
     "unsupported_late_claim": {
         "root_cause": "DELIVERY_WITHIN_ESTIMATE",
         "party": None,
         "action": "reject_late_refund",
         "case_status": "no_action",
-        "confidence": 0.9,
+        "confidence": 1.0,
     },
 }
 

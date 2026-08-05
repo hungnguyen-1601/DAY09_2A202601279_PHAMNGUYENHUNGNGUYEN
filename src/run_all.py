@@ -2,7 +2,7 @@
 
 Luong xu ly moi case:
   input JSON -> Coordinator -> tool data_access (fact sheet)
-  -> handoff song song 3 specialist (Order&Seller, Payment, Delivery - LLM)
+  -> handoff lan luot 3 specialist (Order&Seller, Payment, Delivery - LLM)
   -> handoff findings cho Policy Agent (LLM) de xuat ket luan
   -> Verifier Agent (deterministic) doi chieu voi CSV, sua sai lech
   -> ghi output/<case_id>.json

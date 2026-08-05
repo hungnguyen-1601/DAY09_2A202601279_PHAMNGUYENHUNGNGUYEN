@@ -77,7 +77,7 @@ python scripts/verify_outputs.py
 - **Các phương án đã cân nhắc:** (1) LLM làm hết từ phân tích đến JSON cuối; (2) code deterministic làm hết, không có agent thật; (3) hybrid — LLM agent phân tích/đề xuất theo domain riêng, verifier deterministic tính lại và quyết định cuối.
 - **Phương án đã chọn:** (3) hybrid.
 - **Lý do:** (1) không đảm bảo correctness với model 3B (JSON dài, nhiều ID hash 32 ký tự); (2) không đúng tinh thần bài lab multi-agent A2A; (3) giữ được handoff thật giữa các agent (có trace chứng minh) mà vẫn đảm bảo mọi con số khớp CSV — đúng yêu cầu "ưu tiên dữ liệu có thể kiểm chứng" của đề, chi phí chạy local bằng 0.
-- **Bằng chứng quyết định phù hợp:** `logging/trace.jsonl` có event `verification` từng case (đa số `agrees: true`, các case LLM lệch đều bị sửa và log `corrections`); `scripts/verify_outputs.py` báo 0 errors trên 50 file.
+- **Bằng chứng quyết định phù hợp:** `logging/trace.jsonl` có event `verification` từng case (`16/50` proposal được đồng ý ngay; `34/50` case lệch đều được Verifier sửa và log `corrections`); `scripts/verify_outputs.py` báo 0 errors trên 50 file.
 
 ## 6. Một lỗi hoặc blocker đã xử lý
 
